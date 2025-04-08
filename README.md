@@ -1,150 +1,180 @@
-# ColorFilterApp - Filtro de Cores Avançado com OpenCV e Tkinter
+# 🎨 App Filtro de Cores com OpenCV & Tkinter ✨
 
-## Visão Geral
+[![Versão Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
+[![Licença: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Feito com OpenCV](https://img.shields.io/badge/Feito%20com-OpenCV-informational.svg)](https://opencv.org/)
+[![Usa Tkinter](https://img.shields.io/badge/GUI-Tkinter-orange.svg)](https://docs.python.org/3/library/tkinter.html)
 
-`ColorFilterApp` é uma aplicação de desktop desenvolvida em Python que utiliza OpenCV para processamento de imagem em tempo real a partir de uma webcam e Tkinter para a interface gráfica do usuário (GUI). A aplicação permite aos usuários filtrar cores específicas no feed de vídeo, ajustar parâmetros de processamento e visualizar os resultados instantaneamente. Esta versão simplifica o manuseio da câmera, focando na funcionalidade principal de filtragem e nas opções avançadas de processamento.
+Aplicação de detecção e filtragem de cores em tempo real usando sua webcam, com controles avançados de processamento de imagem e uma interface amigável em Tkinter.
 
-## Funcionalidades Principais
+---
 
-* **Visualização em Tempo Real:** Exibe o feed original da câmera, a máscara de cor gerada e o resultado filtrado.
-* **Filtragem de Cor Flexível:**
-  * Seleção de espaço de cor (HSV, BGR, RGB, Lab, YCrCb).
-  * Ajuste interativo dos limites mínimo e máximo para cada canal do espaço de cor selecionado usando sliders.
-  * Tratamento especial para o componente Hue (Matiz) no espaço HSV para lidar com a natureza cíclica (por exemplo, para a cor vermelha).
-* **Seleção Rápida de Cor:**
-  * Botões pré-definidos para cores comuns (Vermelho, Verde, Azul, Amarelo, etc.).
-  * Seletor de cor do sistema (`colorchooser`) para escolher uma cor visualmente e definir automaticamente uma faixa de filtro aproximada.
-* **Processamento de Imagem Avançado:**
-  * Suavização (Blur Gaussiano) para reduzir ruído antes da filtragem.
-  * Operações morfológicas (Erosão e Dilatação) para refinar a máscara de cor.
-  * Detecção e filtragem de contornos com base na área mínima.
-* **Visualização de Contornos:**
-  * Opção para desenhar os contornos detectados na imagem original.
-  * Opção para desenhar caixas delimitadoras (bounding boxes) ao redor dos objetos detectados.
-  * Opção para marcar o centro dos objetos detectados.
-* **Modo Multi-Cor:**
-  * Salvar configurações de filtro de cor atuais com um nome personalizado.
-  * Ativar um modo para detectar *múltiplas* cores salvas simultaneamente.
-  * Gerenciar a lista de cores salvas (visualizar, carregar para edição, remover, limpar tudo).
-* **Interface Intuitiva:**
-  * Organizada em abas (Cor Única, Avançado, Multi-Cor) para fácil navegação.
-  * Sliders visuais para ajuste de parâmetros.
-  * Barra de status exibindo informações úteis (contagem de objetos, FPS, modo atual).
-* **Feedback Visual:**
-  * Exibição da máscara binária gerada.
-  * Exibição da imagem original com apenas as áreas filtradas visíveis.
+## 🌟 Visão Geral
 
-## Requisitos
+`ColorFilterApp` fornece uma interface gráfica para aproveitar o poder do OpenCV para filtragem de cores em tempo real. Ele captura vídeo da sua webcam, permite definir faixas de cores em vários espaços de cor (HSV, BGR, RGB, Lab, YCrCb), aplicar técnicas de processamento de imagem como desfoque (blur) e operações morfológicas, e visualizar simultaneamente o feed original, a máscara de cor gerada e o resultado final filtrado. Inclui funcionalidades para detecção multi-cor e gerenciamento de presets (cores pré-definidas).
 
-* **Python 3:** (Testado com Python 3.8+)
-* **Bibliotecas Python:**
-  * `opencv-python`: Para processamento de imagem e captura de vídeo.
-  * `numpy`: Para manipulação eficiente de arrays (usado extensivamente pelo OpenCV).
-  * `Pillow` (PIL Fork): Para conversão entre formatos de imagem OpenCV e Tkinter.
-  * `tkinter` e `tkinter.ttk`: Para a interface gráfica (geralmente incluído na instalação padrão do Python).
-* **Webcam:** Uma webcam conectada e funcional.
+---
 
-Você pode instalar as dependências necessárias usando pip:
+## 🚀 Funcionalidades Principais
 
-```bash
-pip install opencv-python numpy Pillow
-```
+*   **🖼️ Visualização em Tempo Real:** Exibe os fluxos de vídeo Original, Máscara e Resultado Filtrado.
+*   **🌈 Filtragem de Cor Flexível:**
+    *   Suporta múltiplos espaços de cor (HSV, BGR, RGB, Lab, YCrCb).
+    *   Sliders interativos para ajuste fino dos limiares Mín/Máx para cada canal.
+    *   Tratamento especial para a natureza circular do Matiz (Hue) em HSV (ex: para vermelho).
+*   **🖱️ Seleção Rápida de Cor:**
+    *   Botões pré-definidos para cores comuns (Vermelho, Verde, Azul, etc.).
+    *   Integração com o seletor de cores do sistema (`colorchooser`) para fácil aproximação da faixa.
+*   **⚙️ Processamento Avançado de Imagem:**
+    *   Desfoque Gaussiano (Gaussian Blur) para redução de ruído.
+    *   Operações Morfológicas (Erosão & Dilatação) para refinamento da máscara.
+    *   Detecção de contornos com filtragem por área mínima.
+*   **👁️ Opções de Visualização de Contornos:**
+    *   Desenhar contornos detectados.
+    *   Desenhar caixas delimitadoras (bounding boxes) ao redor dos objetos.
+    *   Marcar o centro dos objetos detectados.
+*   **🎨 Modo de Detecção Multi-Cor:**
+    *   Salvar configurações atuais do filtro como presets nomeados.
+    *   Ativar modo para detectar múltiplas cores salvas simultaneamente.
+    *   Gerenciar cores salvas (Visualizar, Carregar, Remover, Limpar Tudo) em uma lista rolável com amostras de cor.
+*   **📊 Interface Gráfica Intuitiva:**
+    *   Interface organizada em abas (Cor Única, Avançado, Multi-Cor).
+    *   Sliders visuais e checkboxes para ajuste de parâmetros.
+    *   Barra de status com contagem de objetos, FPS e informação do modo atual.
 
-## Guia de Uso
+---
 
-1. **Executando a Aplicação:**
-   Salve o código como um arquivo Python (por exemplo, `color_filter_app.py`) e execute-o a partir do terminal:
+## 📸 Capturas de Tela
 
-   ```bash
-   python color_filter_app.py
-   ```
+*(Adicione capturas de tela da sua aplicação aqui!)*
 
-   A aplicação tentará abrir a câmera padrão (índice 0). Se a câmera não puder ser aberta, uma mensagem de erro será exibida.
-2. **Interface Gráfica:**
-   A janela principal é dividida em duas seções:
+**Exemplo de Placeholder:**
 
-   * **Painel de Imagem (Esquerda):** Exibe três visualizações:
-     * `Original`: O feed da câmera, possivelmente com contornos/caixas desenhados se habilitados.
-     * `Máscara`: A máscara binária resultante da filtragem de cor e operações morfológicas (pixels brancos representam a cor detectada).
-     * `Resultado Filtrado`: A imagem original onde apenas as áreas correspondentes à máscara são mostradas.
-   * **Painel de Controle (Direita):** Contém as abas para ajustar os parâmetros.
-3. **Abas do Painel de Controle:**
+*Interface Principal:*
+![Janela Principal da Aplicação](Screen.png)
 
-   * **Cor Única:**
-     * **Sliders de Ajuste:** Use os sliders `Min` e `Max` para definir a faixa de valores para os três canais do espaço de cor atualmente selecionado (inicialmente HSV). Os rótulos (H, S, V ou outros) mudam de acordo com o espaço de cor selecionado na aba "Avançado".
-     * **Seleção Rápida:**
-       * `Selecionar Cor`: Abre um seletor de cores. Escolher uma cor definirá automaticamente uma faixa aproximada nos sliders para o espaço de cor atual.
-       * `Cores pré-definidas`: Botões para carregar rapidamente faixas de filtro para cores comuns (funciona melhor no modo HSV).
-     * **Salvar Cor Atual:** Dê um nome à configuração atual dos sliders e clique em `Salvar` ou `Adicionar a Multi` para adicioná-la à lista na aba "Multi-Cor".
-     * `Sair`: Fecha a aplicação.
-   * **Avançado:**
-     * `Espaço de Cor`: Selecione o espaço de cor (HSV, BGR, RGB, Lab, YCrCb) a ser usado para a filtragem. Os sliders e seus rótulos na aba "Cor Única" serão atualizados.
-     * `Erosão`/`Dilatação`: Ajuste o tamanho do kernel para as operações morfológicas (0 desativa). Erosão remove pequenos ruídos brancos; Dilatação pode aumentar as áreas detectadas e preencher buracos.
-     * `Suavização`: Ajuste o tamanho do kernel para o Blur Gaussiano (0 desativa). Ajuda a reduzir o ruído da imagem antes da filtragem.
-     * `Área Mínima`: Define a área mínima (em pixels) que um contorno deve ter para ser considerado um objeto detectado.
-     * `Opções de Visualização`: Marque as caixas para mostrar/ocultar contornos, caixas delimitadoras e o centro dos objetos na visualização "Original".
-   * **Multi-Cor:**
-     * `Ativar Modo Multi-Cor`: Marque esta caixa para detectar *todas* as cores salvas na lista abaixo, em vez de apenas a cor definida pelos sliders principais.
-     * `Cores Salvas`: Exibe a lista de cores que você salvou. Cada item mostra:
-       * Um pequeno quadrado com uma cor representativa.
-       * O nome que você deu e o espaço de cor em que foi salva.
-       * Os ranges (Ch1, Ch2, Ch3) salvos.
-       * Botão `Usar`: Carrega esta cor salva nos sliders principais (desativa o modo Multi-Cor).
-       * Botão `X`: Remove esta cor da lista.
-     * `Adicionar Cor Atual`: Adiciona a configuração atual dos sliders (da aba "Cor Única") à lista.
-     * `Limpar Todas`: Remove todas as cores salvas da lista.
-4. **Barra de Status:**
-   Localizada na parte inferior, exibe mensagens sobre o estado da aplicação, número de objetos detectados, modo atual e a taxa de quadros por segundo (FPS) aproximada. Erros também podem ser exibidos aqui.
 
-## Funcionalidade Principal Explicada
+---
 
-* **Loop `update`:** O coração da aplicação. A cada ~15ms:
+## 📋 Requisitos
 
-  1. Lê um quadro da câmera.
-  2. Converte o quadro para o espaço de cor selecionado.
-  3. Aplica blur (se habilitado).
-  4. Gera a máscara de cor:
-     * **Modo Único:** Usa os valores dos sliders `ch1_min/max`, `ch2_min/max`, `ch3_min/max`. Lida com o "wrap-around" do Hue em HSV se `min > max`.
-     * **Modo Multi:** Itera sobre `self.color_presets`. Para cada cor salva que corresponde ao espaço de cor *atual*, gera uma máscara e a combina com a máscara final usando `cv2.bitwise_or`.
-  5. Aplica operações morfológicas (erosão/dilatação) na máscara (se habilitado).
-  6. Encontra contornos na máscara final.
-  7. Filtra contornos pela área mínima.
-  8. Desenha visualizações (contornos, caixas, centros) em uma cópia do quadro original (se habilitado).
-  9. Cria a imagem "Resultado Filtrado" aplicando a máscara final ao quadro original (`cv2.bitwise_and`).
-  10. Converte as imagens (Original com desenhos, Máscara, Resultado Filtrado) para o formato RGB.
-  11. Redimensiona as imagens para um tamanho de exibição fixo (`self.display_width`).
-  12. Converte as imagens redimensionadas para o formato PIL e depois para `ImageTk.PhotoImage`.
-  13. **Atualiza os `Label`s da GUI com as novas imagens, mantendo referências (`label.image = img_tk`) para evitar que sejam coletadas pelo garbage collector.**
-  14. Atualiza a barra de status e o FPS.
-  15. Agenda a próxima chamada `update`.
-* **Gerenciamento de Cores:** As cores salvas são armazenadas na lista `self.color_presets` como dicionários contendo nome, espaço de cor e os seis valores de limite (min/max para os 3 canais).
+*   **Python:** Versão 3.8 ou superior recomendada.
+*   **Bibliotecas Python:**
+    *   `opencv-python`: Biblioteca principal para tarefas de visão computacional.
+    *   `numpy`: Pacote fundamental para operações numéricas.
+    *   `Pillow` (PIL Fork): Usada para conversão de formato de imagem entre OpenCV e Tkinter.
+    *   `tkinter` & `tkinter.ttk`: Bibliotecas padrão do Python para a GUI (geralmente incluídas).
+*   **Hardware:** Uma webcam funcional conectada ao seu computador.
 
-## Estrutura do Código
+---
 
-O código está encapsulado na classe `ColorFilterApp`:
+## 🔧 Instalação
 
-* **`__init__(self, root)`:** Inicializa a janela principal, a câmera, as variáveis Tkinter, configura a GUI chamando `setup_gui`, e inicia o loop principal chamando `update`.
-* **`setup_gui(self)`:** Cria e organiza todos os widgets da interface gráfica (frames, labels, botões, sliders, notebook, etc.).
-* **`create_slider_set(...)`**, **`create_preset_buttons(...)`:** Métodos auxiliares para criar conjuntos de widgets na GUI.
-* **`get_color_presets(self)`:** Retorna dicionários com as faixas HSV pré-definidas.
-* **`set_preset(self, color_key)`:** Define os valores dos sliders com base em uma cor pré-definida.
-* **`choose_color(self)`:** Abre o seletor de cores e tenta definir os sliders.
-* **`save_current_color(self)`**, **`add_current_color_to_multi(self)`:** Salva a configuração atual dos sliders na lista `color_presets`.
-* **`clear_all_colors(self)`:** Limpa a lista `color_presets`.
-* **`update_color_list(self)`:** Atualiza a exibição da lista de cores salvas na aba "Multi-Cor".
-* **`get_approx_hex_color(self, color_data)`:** Tenta gerar uma cor hexadecimal representativa para a miniatura na lista multi-cor.
-* **`load_color(self, color_data)`:** Carrega uma cor salva nos sliders principais.
-* **`remove_color(self, index)`:** Remove uma cor da lista multi-cor.
-* **`toggle_multi_color_mode(self)`:** Atualiza o status quando o modo multi-cor é ativado/desativado.
-* **`change_color_space(self, *args)`:** Atualiza os rótulos dos sliders e redefine os valores padrão quando o espaço de cor é alterado.
-* **`update(self)`:** O loop principal de processamento e atualização da GUI.
-* **`update_status(self, message, error=False)`:** Atualiza o texto na barra de status.
-* **`quit(self)`:** Libera a câmera e fecha a aplicação corretamente.
+1.  **Clone o repositório (Opcional):**
+    ```bash
+    git clone https://github.com/JPEDROPS092/AppColorOpenCV.git
+    cd AppColorOpenCV
+    ```
 
-## Como Sair
+2.  **Instale as Dependências:**
+    Abra seu terminal ou prompt de comando e execute:
+    ```bash
+    pip install opencv-python numpy Pillow
+    ```
+    Ou, se você tiver um arquivo `requirements.txt`:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Clique no botão "Sair" na aba "Cor Única" ou feche a janela da aplicação. A câmera será liberada automaticamente.
+---
 
-```
+## ▶️ Como Usar
 
-```
+1.  **Execute a Aplicação:**
+    Navegue até o diretório que contém o script (`color_filter_app.py` ou o nome que você deu) no seu terminal e execute:
+    ```bash
+    python nome_do_seu_script.py
+    ```
+    A aplicação tentará iniciar a webcam padrão.
+
+2.  **Visão Geral da Interface:**
+    *   **Painel Esquerdo:** Exibe os feeds de vídeo `Original` (com sobreposições opcionais), `Máscara` e `Resultado Filtrado`.
+    *   **Painel Direito:** Contém as abas de controle.
+
+3.  **Abas de Controle:**
+    *   **`Cor Única`:**
+        *   **Sliders:** Ajuste `Min`/`Max` para os 3 canais do espaço de cor selecionado. Os rótulos mudam dinamicamente (ex: `H - Matiz`, `S - Saturação`, `V - Valor` para HSV).
+        *   **`Selecionar Cor`:** Use o seletor de cores do sistema para definir uma faixa de filtro aproximada.
+        *   **Botões Pré-definidos:** Clique em botões como `Vermelho`, `Verde` para carregar faixas de filtro comuns (melhor em HSV).
+        *   **Salvar:** Dê um nome às configurações atuais dos sliders e clique em `Salvar` ou `Adicionar a Multi` para adicioná-la à lista Multi-Cor.
+        *   **`Sair`:** Encerra a aplicação.
+    *   **`Avançado`:**
+        *   **`Espaço de Cor`:** Escolha o espaço de cor para filtragem (HSV, BGR, RGB, Lab, YCrCb).
+        *   **`Erosão`/`Dilatação`:** Controle o tamanho do kernel das operações morfológicas (0 para desativar).
+        *   **`Suavização`:** Controle o tamanho do kernel do Gaussian Blur (0 para desativar).
+        *   **`Área Mínima`:** Defina a área mínima em pixels para um contorno ser considerado um objeto.
+        *   **`Opções de Visualização`:** Alterne a exibição de contornos, caixas delimitadoras e centros de objetos no feed `Original`.
+    *   **`Multi-Cor`:**
+        *   **`Ativar Modo Multi-Cor`:** Marque para detectar todas as cores salvas simultaneamente.
+        *   **`Cores Salvas`:** Uma lista rolável dos seus presets salvos. Cada um mostra uma amostra de cor, nome, espaço, faixas e botões `Usar` / `X`.
+            *   `Usar`: Carrega o preset nos sliders principais (desativa o modo Multi-Cor).
+            *   `X`: Remove o preset.
+        *   **`Adicionar Cor Atual`:** Adiciona as configurações atuais dos sliders da aba `Cor Única` a esta lista.
+        *   **`Limpar Todas`:** Remove todos os presets salvos.
+
+4.  **Barra de Status:**
+    Localizada na parte inferior, mostra contagem de objetos, FPS aproximado, modo atual e mensagens de erro.
+
+---
+
+## 🤔 Como Funciona (Lógica Principal)
+
+A aplicação executa um loop principal `update`:
+
+1.  **Ler Quadro:** Captura um quadro da webcam.
+2.  **Converter:** Altera o quadro para o espaço de cor selecionado (ex: BGR para HSV).
+3.  **Pré-processar:** Aplica Gaussian Blur se habilitado.
+4.  **Mascarar:** Cria uma máscara binária com base na(s) faixa(s) de cor definida(s).
+    *   *Modo Único:* Usa os valores atuais dos sliders, tratando o wrap-around do Matiz HSV.
+    *   *Modo Multi:* Itera pelos presets salvos que correspondem ao espaço atual, combinando as máscaras com OU (OR).
+5.  **Refinar:** Aplica Erosão e Dilatação à máscara se habilitado.
+6.  **Encontrar Contornos:** Detecta regiões contínuas na máscara final.
+7.  **Filtrar e Desenhar:** Filtra contornos por área mínima e desenha as visualizações selecionadas (contornos, caixas, centros) em uma cópia do quadro original.
+8.  **Aplicar Máscara:** Cria a visualização `Resultado Filtrado` usando `cv2.bitwise_and`.
+9.  **Exibir:** Converte as imagens processadas do OpenCV (BGR/Cinza) para RGB, redimensiona-as, converte para o formato PIL, depois para `ImageTk.PhotoImage`, e atualiza os widgets `Label` do Tkinter, **mantendo crucialmente uma referência** aos objetos `PhotoImage`.
+10. **Atualizar Status:** Calcula o FPS e atualiza o texto da barra de status.
+11. **Agendar:** Usa `root.after()` para chamar o loop `update` novamente.
+
+---
+
+## 🏗️ Estrutura do Código
+
+A aplicação é organizada dentro da classe `ColorFilterApp`:
+
+*   `__init__`: Lida com inicialização (GUI, câmera, variáveis) e inicia o loop de atualização.
+*   `setup_gui`: Constrói os elementos da interface Tkinter.
+*   `create_slider_set`, `create_preset_buttons`: Métodos auxiliares para criação da GUI.
+*   `get_color_presets`, `set_preset`, `choose_color`: Métodos para lidar com seleção de cor e presets.
+*   `save_current_color`, `add_current_color_to_multi`, `clear_all_colors`, `update_color_list`, `load_color`, `remove_color`: Métodos para gerenciar a lista de presets multi-cor.
+*   `change_color_space`: Atualiza os rótulos da GUI e redefine valores dos sliders quando o espaço de cor muda.
+*   `update`: O loop principal de processamento e exibição.
+*   `update_status`: Atualiza a barra de status inferior.
+*   `quit`: Lida com a liberação da câmera e o fechamento correto da aplicação.
+
+---
+
+## 🛑 Como Sair
+
+Clique no botão **`Sair`** na aba `Cor Única` ou feche a janela principal da aplicação. O recurso da webcam será liberado automaticamente.
+
+---
+
+## 🤝 Contribuições
+
+Contribuições, issues e sugestões de funcionalidades são bem-vindos! Sinta-se à vontade para verificar a [página de issues](https://github.com/JPEDROPS092/AppColorOpenCV/issues) ou abrir uma nova. Por favor, siga as práticas padrão de codificação ao enviar pull requests.
+
+---
+
+## 📜 Licença
+
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE.md](LICENSE.md) *(você deve criar este arquivo)* para detalhes.
