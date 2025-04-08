@@ -46,7 +46,6 @@ Aplicação de detecção e filtragem de cores em tempo real usando sua webcam, 
 
 ## 📸 Capturas de Tela
 
-*(Adicione capturas de tela da sua aplicação aqui!)*
 
 **Exemplo de Placeholder:**
 
