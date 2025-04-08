@@ -71,8 +71,8 @@ Aplicação de detecção e filtragem de cores em tempo real usando sua webcam, 
 
 1.  **Clone o repositório (Opcional):**
     ```bash
-    git clone https://github.com/JPEDROPS092/AppColorOpenCV.git
-    cd AppColorOpenCV
+    git clone https://github.com/JPEDROPS092/ColorDeteccao.git
+    cd ColorDeteccao
     ```
 
 2.  **Instale as Dependências:**
