@@ -3,27 +3,27 @@ import numpy as np
 import tkinter as tk
 from tkinter import Scale, Label, Button, Frame, StringVar, OptionMenu, IntVar, Checkbutton, ttk, colorchooser, messagebox
 from PIL import Image, ImageTk
-import time # For FPS calculation
-import traceback # For detailed error printing
+import time # Para cálculo de FPS
+import traceback # Para impressão detalhada de erros
 
 class ColorFilterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Filtro de Cores Avançado com OpenCV (Estilo Simples)")
-        # Start maximized for better viewing
+        # Iniciar maximizado para melhor visualização
         try:
             self.root.state('zoomed') # Windows
         except tk.TclError:
             try:
-                self.root.attributes('-zoomed', True) # Linux (some WMs)
+                self.root.attributes('-zoomed', True) # Linux (alguns WMs)
             except tk.TclError:
                 self.root.geometry("1280x720") # Fallback
 
-        self.root.protocol("WM_DELETE_WINDOW", self.quit) # Handle window close button
+        self.root.protocol("WM_DELETE_WINDOW", self.quit) # Lidar com o botão de fechar janela
 
-        # --- Camera Initialization (Simplified like the example) ---
-        self.camera_index = 0 # Keep track, but initialize directly
-        # Try with CAP_DSHOW first, fallback if needed
+        # --- Inicialização da Câmera (Simplificada como no exemplo) ---
+        self.camera_index = 0 # Manter o índice, mas inicializar diretamente
+        # Tentar com CAP_DSHOW primeiro, fallback se necessário
         self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
              print(f"Aviso: Falha ao abrir câmera {self.camera_index} com CAP_DSHOW, tentando sem...")
@@ -34,68 +34,68 @@ class ColorFilterApp:
                   return
 
         print(f"Câmera {self.camera_index} iniciada.")
-        # Get initial actual resolution for display sizing reference if needed
+        # Obter a resolução real inicial para referência de dimensionamento da exibição, se necessário
         # actual_width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         # actual_height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         # print(f"Resolução da câmera: {int(actual_width)}x{int(actual_height)}")
 
 
-        # --- Tkinter Variables ---
-        # Basic HSV / Color Space Ranges
+        # --- Variáveis Tkinter ---
+        # Faixas básicas de HSV / Espaço de Cor
         self.ch1_min_var = tk.IntVar(value=0)
-        self.ch1_max_var = tk.IntVar(value=179) # Default HSV Hue max
-        self.ch2_min_var = tk.IntVar(value=50) # Default decent Saturation min
+        self.ch1_max_var = tk.IntVar(value=179) # Máximo padrão para Matiz (Hue) HSV
+        self.ch2_min_var = tk.IntVar(value=50) # Mínimo padrão para Saturação (Saturation) decente
         self.ch2_max_var = tk.IntVar(value=255)
-        self.ch3_min_var = tk.IntVar(value=50) # Default decent Value min
+        self.ch3_min_var = tk.IntVar(value=50) # Mínimo padrão para Valor (Value) decente
         self.ch3_max_var = tk.IntVar(value=255)
 
-        # Advanced Options
+        # Opções Avançadas
         self.erosion_size = IntVar(value=1)
         self.dilation_size = IntVar(value=2)
-        self.blur_size = IntVar(value=3)  # Start with a small blur
-        self.min_contour_area = IntVar(value=500) # Adjusted default
+        self.blur_size = IntVar(value=3)  # Começar com um pequeno blur
+        self.min_contour_area = IntVar(value=500) # Padrão ajustado
         self.show_contours = IntVar(value=1)
-        self.show_bounding_boxes = IntVar(value=1) # Default on is often useful
-        self.show_object_center = IntVar(value=1) # Default on
-        self.color_space = StringVar(value="HSV") # Still useful for processing logic
-        # self.camera_resolution = StringVar(value="640x480") # Removed resolution control for simplicity
+        self.show_bounding_boxes = IntVar(value=1) # Ligar por padrão é geralmente útil
+        self.show_object_center = IntVar(value=1) # Ligar por padrão
+        self.color_space = StringVar(value="HSV") # Ainda útil para a lógica de processamento
+        # self.camera_resolution = StringVar(value="640x480") # Controle de resolução removido por simplicidade
         self.multi_color_mode = IntVar(value=0)
 
-        # Multi-Color Management
+        # Gerenciamento Multi-Cor
         self.color_presets = []
         self.current_color_name = StringVar(value="Cor Atual")
         self.preset_name_var = StringVar(value="Minha Cor")
 
-        # Performance / Display
-        # Use a fixed size or calculate based on a desired width
+        # Desempenho / Exibição
+        # Usar um tamanho fixo ou calcular com base em uma largura desejada
         self.display_width = 480
-        # We will calculate height based on aspect ratio in update
+        # Calcularemos a altura com base na proporção no update
         self.fps = 0
         self.last_update_time = time.time()
         self.frame_count = 0
 
-        # Attributes to store PhotoImage references (crucial!)
+        # Atributos para armazenar referências PhotoImage (crucial!)
         self.original_tk = None
         self.mask_tk = None
         self.result_tk = None
 
-        # --- GUI Setup ---
-        self.setup_gui() # This method remains largely the same
+        # --- Configuração da GUI ---
+        self.setup_gui() # Este método permanece basicamente o mesmo
 
-        # --- Start Update Loop ---
+        # --- Iniciar Loop de Atualização ---
         self.update()
 
 
     def setup_gui(self):
-        """Sets up the Tkinter interface."""
-        # Main frame
+        """Configura a interface Tkinter."""
+        # Frame principal
         main_frame = Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Control Frame (Right)
-        control_panel = Frame(main_frame, width=400) # Fixed width for controls
+        # Frame de Controle (Direita)
+        control_panel = Frame(main_frame, width=400) # Largura fixa para controles
         control_panel.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
-        control_panel.pack_propagate(False) # Prevent control panel from resizing
+        control_panel.pack_propagate(False) # Impede que o painel de controle redimensione
 
         control_notebook = ttk.Notebook(control_panel)
         control_notebook.pack(fill=tk.BOTH, expand=True)
@@ -108,7 +108,7 @@ class ColorFilterApp:
         control_notebook.add(advanced_tab, text=" Avançado ")
         control_notebook.add(multi_color_tab, text=" Multi-Cor ")
 
-        # Image Frame (Left)
+        # Frame de Imagem (Esquerda)
         image_frame = Frame(main_frame)
         image_frame.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
 
@@ -124,14 +124,14 @@ class ColorFilterApp:
         self.result_label = Label(image_frame, borderwidth=1, relief="sunken")
         self.result_label.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
-        # Configure image frame resizing behavior
+        # Configurar comportamento de redimensionamento do frame de imagem
         image_frame.grid_rowconfigure(1, weight=1)
         image_frame.grid_rowconfigure(3, weight=1)
         image_frame.grid_columnconfigure(0, weight=1)
         image_frame.grid_columnconfigure(1, weight=1)
 
 
-        # Status bar (Bottom)
+        # Barra de status (Inferior)
         status_frame = Frame(self.root, bd=1, relief=tk.SUNKEN)
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         self.status_label = Label(status_frame, text="Pronto", anchor=tk.W)
@@ -139,20 +139,20 @@ class ColorFilterApp:
         self.fps_label = Label(status_frame, text="FPS: 0", anchor=tk.E)
         self.fps_label.pack(side=tk.RIGHT, padx=5)
 
-        # --- Populate Basic Tab ---
+        # --- Popular Aba Básica ---
         Label(basic_tab, text="Ajuste os Valores:", font=("Arial", 11, "bold")).pack(pady=(10, 5), anchor=tk.W)
 
-        # Use labels that change with color space
+        # Usar rótulos que mudam com o espaço de cor
         self.ch1_label_var = StringVar(value="H - Matiz")
         self.ch2_label_var = StringVar(value="S - Saturação")
         self.ch3_label_var = StringVar(value="V - Valor")
 
-        # Pass the correct range for H slider (0-179)
+        # Passar a faixa correta para o slider H (0-179)
         self.create_slider_set(basic_tab, self.ch1_label_var, 0, 179, self.ch1_min_var, self.ch1_max_var)
         self.create_slider_set(basic_tab, self.ch2_label_var, 0, 255, self.ch2_min_var, self.ch2_max_var)
         self.create_slider_set(basic_tab, self.ch3_label_var, 0, 255, self.ch3_min_var, self.ch3_max_var)
 
-        # Color Picker and Presets
+        # Seletor de Cor e Presets
         Label(basic_tab, text="Seleção Rápida:", font=("Arial", 11, "bold")).pack(pady=(15, 5), anchor=tk.W)
         picker_frame = Frame(basic_tab)
         picker_frame.pack(pady=5, fill=tk.X)
@@ -160,9 +160,9 @@ class ColorFilterApp:
         Label(picker_frame, textvariable=self.current_color_name, fg="blue").pack(side=tk.LEFT, padx=5)
 
         Label(basic_tab, text="Cores pré-definidas:").pack(pady=(10,2), anchor=tk.W)
-        self.create_preset_buttons(basic_tab) # This helper should still work
+        self.create_preset_buttons(basic_tab) # Este helper ainda deve funcionar
 
-        # Save Current Color
+        # Salvar Cor Atual
         Label(basic_tab, text="Salvar Cor Atual:", font=("Arial", 11, "bold")).pack(pady=(15, 5), anchor=tk.W)
         save_frame = Frame(basic_tab)
         save_frame.pack(pady=5, fill=tk.X)
@@ -170,21 +170,21 @@ class ColorFilterApp:
         Button(save_frame, text="Salvar", command=self.save_current_color).pack(side=tk.LEFT, padx=2)
         Button(save_frame, text="Adicionar a Multi", command=self.add_current_color_to_multi).pack(side=tk.LEFT, padx=2)
 
-        # Exit Button
+        # Botão Sair
         Button(basic_tab, text="Sair", command=self.quit, bg="#FF5733", fg="white", width=10).pack(pady=(20, 10))
 
 
-        # --- Populate Advanced Tab ---
+        # --- Popular Aba Avançada ---
         Label(advanced_tab, text="Opções de Processamento:", font=("Arial", 11, "bold")).pack(pady=(10, 5), anchor=tk.W)
 
-        # Color Space
+        # Espaço de Cor
         space_frame = Frame(advanced_tab)
         space_frame.pack(pady=5, fill=tk.X, padx=5)
         Label(space_frame, text="Espaço de Cor:", width=12, anchor=tk.W).pack(side=tk.LEFT)
-        color_spaces = ["HSV", "BGR", "RGB", "Lab", "YCrCb"] # Added BGR
+        color_spaces = ["HSV", "BGR", "RGB", "Lab", "YCrCb"] # Adicionado BGR
         OptionMenu(space_frame, self.color_space, *color_spaces, command=self.change_color_space).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Morphology
+        # Morfologia
         morph_frame = Frame(advanced_tab)
         morph_frame.pack(pady=5, fill=tk.X, padx=5)
         Label(morph_frame, text="Erosão:", width=12, anchor=tk.W).pack(side=tk.LEFT)
@@ -195,19 +195,19 @@ class ColorFilterApp:
         Label(morph_frame2, text="Dilatação:", width=12, anchor=tk.W).pack(side=tk.LEFT)
         Scale(morph_frame2, from_=0, to=15, orient=tk.HORIZONTAL, variable=self.dilation_size, length=150).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Blur
+        # Blur (Suavização)
         blur_frame = Frame(advanced_tab)
         blur_frame.pack(pady=5, fill=tk.X, padx=5)
         Label(blur_frame, text="Suavização:", width=12, anchor=tk.W).pack(side=tk.LEFT)
         Scale(blur_frame, from_=0, to=25, orient=tk.HORIZONTAL, variable=self.blur_size, length=150).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Contour Area
+        # Área do Contorno
         contour_frame = Frame(advanced_tab)
         contour_frame.pack(pady=5, fill=tk.X, padx=5)
         Label(contour_frame, text="Área Mínima:", width=12, anchor=tk.W).pack(side=tk.LEFT)
         Scale(contour_frame, from_=10, to=10000, orient=tk.HORIZONTAL, variable=self.min_contour_area, length=150).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Visualization Options
+        # Opções de Visualização
         Label(advanced_tab, text="Opções de Visualização:", font=("Arial", 11, "bold")).pack(pady=(15, 5), anchor=tk.W)
         viz_frame = Frame(advanced_tab, padx=5)
         viz_frame.pack(pady=5, fill=tk.X)
@@ -215,15 +215,15 @@ class ColorFilterApp:
         Checkbutton(viz_frame, text="Mostrar Caixas Delimitadoras", variable=self.show_bounding_boxes).pack(anchor=tk.W)
         Checkbutton(viz_frame, text="Mostrar Centro dos Objetos", variable=self.show_object_center).pack(anchor=tk.W)
 
-        # Camera Options - Removed for simplicity based on the example
+        # Opções da Câmera - Removido por simplicidade com base no exemplo
         # Label(advanced_tab, text="Opções da Câmera:", font=("Arial", 11, "bold")).pack(pady=(15, 5), anchor=tk.W)
         # cam_frame = Frame(advanced_tab, padx=5)
         # cam_frame.pack(pady=5, fill=tk.X)
-        # # Resolution dropdown removed
-        # # Toggle camera button removed
+        # # Dropdown de resolução removido
+        # # Botão de alternar câmera removido
 
 
-        # --- Populate Multi-Color Tab ---
+        # --- Popular Aba Multi-Cor ---
         Label(multi_color_tab, text="Detecção de Múltiplas Cores", font=("Arial", 11, "bold")).pack(pady=10, anchor=tk.W)
 
         Checkbutton(multi_color_tab, text="Ativar Modo Multi-Cor", variable=self.multi_color_mode,
@@ -231,7 +231,7 @@ class ColorFilterApp:
 
         Label(multi_color_tab, text="Cores Salvas:").pack(anchor=tk.W, pady=(10,2))
 
-        # Frame for the list with scrollbar
+        # Frame para a lista com barra de rolagem
         list_container = Frame(multi_color_tab)
         list_container.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -242,26 +242,26 @@ class ColorFilterApp:
         self.color_list_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.color_list_canvas.yview)
 
-        # This frame goes INSIDE the canvas
+        # Este frame vai DENTRO do canvas
         self.color_list_frame = Frame(self.color_list_canvas)
         self.color_list_canvas.create_window((0,0), window=self.color_list_frame, anchor="nw")
 
-        # Update scrollregion when list frame size changes
+        # Atualizar scrollregion quando o tamanho do frame da lista mudar
         self.color_list_frame.bind("<Configure>", lambda e: self.color_list_canvas.configure(scrollregion=self.color_list_canvas.bbox("all")))
 
-        # Buttons for managing colors
+        # Botões para gerenciar cores
         color_manage_frame = Frame(multi_color_tab)
         color_manage_frame.pack(fill=tk.X, pady=10)
         Button(color_manage_frame, text="Adicionar Cor Atual", command=self.add_current_color_to_multi).pack(side=tk.LEFT, padx=5)
         Button(color_manage_frame, text="Limpar Todas", command=self.clear_all_colors).pack(side=tk.LEFT, padx=5)
 
-        # Initialize list
+        # Inicializar lista
         self.update_color_list()
-        self.change_color_space() # Set initial labels/ranges correctly
+        self.change_color_space() # Definir rótulos/faixas iniciais corretamente
 
-    # --- Helper methods like create_slider_set, create_preset_buttons remain the same ---
+    # --- Métodos helper como create_slider_set, create_preset_buttons permanecem os mesmos ---
     def create_slider_set(self, parent, label_var, min_val, max_val, min_tk_var, max_tk_var):
-        """Helper to create a labeled Min/Max slider pair."""
+        """Helper para criar um par de sliders Min/Max rotulado."""
         frame = Frame(parent, pady=2)
         frame.pack(fill=tk.X, padx=5)
 
@@ -270,27 +270,27 @@ class ColorFilterApp:
         sub_frame = Frame(frame)
         sub_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Find the Scale widgets associated with the IntVars to configure range
+        # Encontra os widgets Scale associados às IntVars para configurar a faixa
         scale_min = Scale(sub_frame, from_=min_val, to=max_val, orient=tk.HORIZONTAL, variable=min_tk_var, length=100, showvalue=True)
         scale_min.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
         scale_max = Scale(sub_frame, from_=min_val, to=max_val, orient=tk.HORIZONTAL, variable=max_tk_var, length=100, showvalue=True)
         scale_max.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        # Store references if needed for dynamic range update (though simplified now)
-        # if label_var == self.ch1_label_var: # Example
+        # Armazenar referências se necessário para atualização dinâmica da faixa (embora simplificado agora)
+        # if label_var == self.ch1_label_var: # Exemplo
         #     self.ch1_scale_min = scale_min
         #     self.ch1_scale_max = scale_max
         # etc.
 
-        # Labels for Min/Max under sliders
+        # Rótulos para Min/Max sob os sliders
         label_frame = Frame(frame)
-        label_frame.pack(side=tk.LEFT, fill=tk.X, expand=True) # Place it under the sub_frame in layout
+        label_frame.pack(side=tk.LEFT, fill=tk.X, expand=True) # Coloca abaixo do sub_frame no layout
         Label(label_frame, text="Min", width=10, anchor=tk.W).pack(side=tk.LEFT, padx=(14, 5), fill=tk.X, expand=True)
         Label(label_frame, text="Max", width=10, anchor=tk.E).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
 
     def create_preset_buttons(self, parent):
-        """Helper to create preset color buttons in rows."""
+        """Helper para criar botões de cores pré-definidas em linhas."""
         button_colors = [
             ("Vermelho", "red", "white"), ("Verde", "green", "white"), ("Azul", "blue", "white"),
             ("Amarelo", "yellow", "black"),("Laranja", "orange", "black"), ("Ciano", "cyan", "black"),
@@ -308,21 +308,21 @@ class ColorFilterApp:
                  current_row = Frame(button_frame)
                  current_row.pack(fill=tk.X, pady=(2,0))
 
-            preset_name = name.lower().replace("ê", "e").replace("á", "a").replace("ã", "a").replace("ç","c") # Normalize name
-            # Use lambda with default argument to capture current preset_name
+            preset_name = name.lower().replace("ê", "e").replace("á", "a").replace("ã", "a").replace("ç","c") # Normalizar nome
+            # Usar lambda com argumento padrão para capturar o preset_name atual
             btn = Button(current_row, text=name, bg=bg, fg=fg, width=10,
                          command=lambda p=preset_name: self.set_preset(p))
             btn.pack(side=tk.LEFT, padx=2, expand=True, fill=tk.X)
 
-    # --- Color Management Methods (get_color_presets, set_preset, choose_color, save_current_color, etc.) ---
-    # --- These remain largely the same as in your advanced version                  ---
-    # --- Make sure set_preset checks/sets color_space to HSV                       ---
-    # --- Make sure choose_color uses the current color_space                       ---
-    # --- Make sure save_current_color saves the current color_space                ---
-    # --- Make sure load_color sets the correct color_space before loading values   ---
+    # --- Métodos de Gerenciamento de Cor (get_color_presets, set_preset, choose_color, save_current_color, etc.) ---
+    # --- Estes permanecem basicamente os mesmos da sua versão avançada                   ---
+    # --- Certifique-se que set_preset verifica/define color_space para HSV               ---
+    # --- Certifique-se que choose_color usa o color_space atual                        ---
+    # --- Certifique-se que save_current_color salva o color_space atual                 ---
+    # --- Certifique-se que load_color define o color_space correto antes de carregar valores ---
 
     def get_color_presets(self):
-        """Defines HSV presets. Can be extended for other spaces."""
+        """Define presets HSV. Pode ser estendido para outros espaços."""
         presets = {
             "vermelho": {"h_min": 0, "h_max": 10, "s_min": 100, "s_max": 255, "v_min": 70, "v_max": 255},
             "vermelho_wrap": {"h_min": 170, "h_max": 179, "s_min": 100, "s_max": 255, "v_min": 70, "v_max": 255},
@@ -346,7 +346,7 @@ class ColorFilterApp:
         return presets, name_map
 
     def set_preset(self, color_key):
-        """Sets sliders based on a preset color key."""
+        """Define os sliders com base em uma chave de cor pré-definida."""
         if self.color_space.get() != "HSV":
             self.color_space.set("HSV")
             self.change_color_space()
@@ -365,7 +365,7 @@ class ColorFilterApp:
             display_name = next((name for name, key in name_map.items() if key == color_key), "Preset")
             self.current_color_name.set(display_name)
             self.update_status(f"Preset '{display_name}' aplicado.")
-            # Handle red wrap for multi-color mode
+            # Lidar com o wrap do vermelho para o modo multi-cor
             if color_key == "vermelho" and self.multi_color_mode.get():
                  red_wrap_preset = presets.get("vermelho_wrap")
                  if red_wrap_preset:
@@ -378,7 +378,7 @@ class ColorFilterApp:
             self.update_status(f"Preset '{color_key}' não encontrado.")
 
     def choose_color(self):
-        """Opens a color picker and sets sliders (attempts conversion)."""
+        """Abre um seletor de cores e define os sliders (tenta conversão)."""
         result = colorchooser.askcolor(title="Escolha uma cor")
         if result and result[1]:
             rgb_color = result[0]
@@ -387,20 +387,20 @@ class ColorFilterApp:
                 pixel_bgr = np.uint8([[[b, g, r]]])
                 try:
                     space = self.color_space.get()
-                    # ... [Rest of the conversion logic from previous advanced version] ...
+                    # ... [Restante da lógica de conversão da versão avançada anterior] ...
                     if space == "HSV":
                         converted_pixel = cv2.cvtColor(pixel_bgr, cv2.COLOR_BGR2HSV)
                         ch1, ch2, ch3 = converted_pixel[0][0]
                         h_tol, s_tol, v_tol = 10, 50, 50
                         self.ch1_min_var.set(max(0, ch1 - h_tol))
                         self.ch1_max_var.set(min(179, ch1 + h_tol))
-                        # ... set s and v ...
+                        # ... definir s e v ...
                         self.ch2_min_var.set(max(0, ch2 - s_tol))
                         self.ch2_max_var.set(min(255, ch2 + s_tol))
                         self.ch3_min_var.set(max(0, ch3 - v_tol))
                         self.ch3_max_var.set(min(255, ch3 + v_tol))
                     elif space == "BGR":
-                        b_ch, g_ch, r_ch = pixel_bgr[0][0] # Corrected variable names
+                        b_ch, g_ch, r_ch = pixel_bgr[0][0] # Nomes de variáveis corrigidos
                         tol = 25
                         self.ch1_min_var.set(max(0, b_ch - tol)) # B
                         self.ch1_max_var.set(min(255, b_ch + tol))
@@ -409,7 +409,7 @@ class ColorFilterApp:
                         self.ch3_min_var.set(max(0, r_ch - tol)) # R
                         self.ch3_max_var.set(min(255, r_ch + tol))
                     elif space == "RGB":
-                        r_ch, g_ch, b_ch = pixel_bgr[0][0, ::-1] # Corrected variable names
+                        r_ch, g_ch, b_ch = pixel_bgr[0][0, ::-1] # Nomes de variáveis corrigidos
                         tol = 25
                         self.ch1_min_var.set(max(0, r_ch - tol)) # R
                         self.ch1_max_var.set(min(255, r_ch + tol))
@@ -423,7 +423,7 @@ class ColorFilterApp:
                         l_tol, a_tol, b_tol = 10, 20, 20
                         self.ch1_min_var.set(max(0, l - l_tol))
                         self.ch1_max_var.set(min(255, l + l_tol))
-                        # ... set a and b ...
+                        # ... definir a e b ...
                         self.ch2_min_var.set(max(0, a - a_tol))
                         self.ch2_max_var.set(min(255, a + a_tol))
                         self.ch3_min_var.set(max(0, b_lab - b_tol))
@@ -434,7 +434,7 @@ class ColorFilterApp:
                         y_tol, cr_tol, cb_tol = 20, 20, 20
                         self.ch1_min_var.set(max(0, y - y_tol))
                         self.ch1_max_var.set(min(255, y + y_tol))
-                         # ... set Cr and Cb ...
+                         # ... definir Cr e Cb ...
                         self.ch2_min_var.set(max(0, cr - cr_tol))
                         self.ch2_max_var.set(min(255, cr + cr_tol))
                         self.ch3_min_var.set(max(0, cb - cb_tol))
@@ -446,7 +446,7 @@ class ColorFilterApp:
                      self.update_status(f"Erro ao converter cor: {e}")
 
     def save_current_color(self):
-        """Saves the current slider settings for the multi-color list."""
+        """Salva as configurações atuais dos sliders para a lista multi-cor."""
         name = self.preset_name_var.get().strip() or f"Cor {len(self.color_presets) + 1}"
 
         if any(c['name'] == name for c in self.color_presets):
@@ -477,14 +477,14 @@ class ColorFilterApp:
             self.update_status("Lista Multi-Cor limpa.")
 
     def update_color_list(self):
-        """Updates the visual list of saved colors."""
+        """Atualiza a lista visual de cores salvas."""
         for widget in self.color_list_frame.winfo_children():
             widget.destroy()
         if not self.color_presets:
              Label(self.color_list_frame, text="Nenhuma cor salva.").pack(padx=10, pady=10)
         else:
              for i, color_data in enumerate(self.color_presets):
-                # ... [Rest of the list update logic from previous advanced version] ...
+                # ... [Restante da lógica de atualização da lista da versão avançada anterior] ...
                 color_frame = Frame(self.color_list_frame, borderwidth=1, relief="groove")
                 color_frame.pack(fill=tk.X, pady=2, padx=2)
                 swatch_canvas = tk.Canvas(color_frame, width=25, height=25, bg="white", highlightthickness=0)
@@ -507,7 +507,7 @@ class ColorFilterApp:
         self.color_list_canvas.config(scrollregion=self.color_list_canvas.bbox("all"))
 
     def get_approx_hex_color(self, color_data):
-         # ... [Logic from previous advanced version] ...
+         # ... [Lógica da versão avançada anterior] ...
         try:
             ch1 = (color_data['ch1_min'] + color_data['ch1_max']) // 2
             ch2 = (color_data['ch2_min'] + color_data['ch2_max']) // 2
@@ -533,7 +533,7 @@ class ColorFilterApp:
         return "#808080"
 
     def load_color(self, color_data):
-        """Loads a saved color into the main controls."""
+        """Carrega uma cor salva nos controles principais."""
         target_space = color_data['space']
         if self.color_space.get() != target_space:
             self.color_space.set(target_space)
@@ -563,10 +563,10 @@ class ColorFilterApp:
         else:
             self.update_status("Modo Multi-Cor desativado.")
 
-    # --- Camera and Processing Methods ---
+    # --- Métodos da Câmera e Processamento ---
 
     def change_color_space(self, *args):
-        """Updates slider ranges and labels based on the selected color space."""
+        """Atualiza as faixas dos sliders e rótulos com base no espaço de cor selecionado."""
         space = self.color_space.get()
         self.update_status(f"Alterando espaço de cor para {space}")
 
@@ -584,15 +584,15 @@ class ColorFilterApp:
             self.ch2_label_var.set(labels[1])
             self.ch3_label_var.set(labels[2])
 
-            # Reset values to defaults for the space
-            # Ideally, reconfigure Scale widgets' 'from_'/'to_', but resetting values is simpler
-            # Note: This requires finding the Scale widgets or storing references (see create_slider_set)
-            # For now, just setting the variables:
+            # Redefinir valores para padrões para o espaço
+            # Idealmente, reconfigurar 'from_'/'to_' dos widgets Scale, mas redefinir valores é mais simples
+            # Nota: Isso requer encontrar os widgets Scale ou armazenar referências (ver create_slider_set)
+            # Por enquanto, apenas definindo as variáveis:
             if space == "HSV":
                  self.ch1_min_var.set(0); self.ch1_max_var.set(179)
                  self.ch2_min_var.set(50); self.ch2_max_var.set(255)
                  self.ch3_min_var.set(50); self.ch3_max_var.set(255)
-            # Add default value resets for other spaces if desired...
+            # Adicionar redefinições de valor padrão para outros espaços, se desejado...
             elif space in ["BGR", "RGB", "YCrCb", "Lab"]:
                  self.ch1_min_var.set(0); self.ch1_max_var.set(255)
                  self.ch2_min_var.set(0); self.ch2_max_var.set(255)
@@ -602,28 +602,28 @@ class ColorFilterApp:
         else:
             self.update_status(f"Espaço de cor desconhecido: {space}")
 
-    # Resolution and toggle camera methods removed for simplicity
+    # Métodos de resolução e alternância de câmera removidos por simplicidade
 
     def update(self):
-        """Core loop: Reads frame, processes, and updates the display (Simple Example Style)."""
+        """Loop principal: Lê o frame, processa e atualiza a exibição (Estilo Exemplo Simples)."""
         if not self.cap or not self.cap.isOpened():
             self.update_status("Erro: Câmera indisponível.", error=True)
-            self.root.after(1000, self.update) # Try again
+            self.root.after(1000, self.update) # Tentar novamente
             return
 
         ret, frame = self.cap.read()
 
         if not ret or frame is None:
             self.update_status("Erro ao ler frame.", error=True)
-            self.root.after(100, self.update) # Try again soon
+            self.root.after(100, self.update) # Tentar novamente em breve
             return
 
-        # --- Frame Processing (Keep advanced logic) ---
+        # --- Processamento do Frame (Manter lógica avançada) ---
         try:
             process_start_time = time.time()
-            result_frame_for_drawing = frame.copy() # Keep for drawing contours etc.
+            result_frame_for_drawing = frame.copy() # Manter para desenhar contornos etc.
 
-            # 1. Color Space Conversion
+            # 1. Conversão do Espaço de Cor
             space = self.color_space.get()
             try:
                 if space == "HSV": converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -631,34 +631,34 @@ class ColorFilterApp:
                 elif space == "Lab": converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
                 elif space == "YCrCb": converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
                 elif space == "BGR": converted_frame = frame
-                else: converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV); space="HSV"
+                else: converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV); space="HSV" # Fallback
             except cv2.error as e:
                  self.update_status(f"Erro conversão cor: {e}", error=True)
-                 converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV); space="HSV"
+                 converted_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV); space="HSV" # Fallback
 
-            # 2. Optional Blur
+            # 2. Blur Opcional
             blur_ksize = self.blur_size.get()
-            processed_frame = converted_frame # Start with converted (or original if no blur)
+            processed_frame = converted_frame # Começar com convertido (ou original se sem blur)
             if blur_ksize > 0:
-                if blur_ksize % 2 == 0: blur_ksize += 1
+                if blur_ksize % 2 == 0: blur_ksize += 1 # Deve ser ímpar
                 processed_frame = cv2.GaussianBlur(converted_frame, (blur_ksize, blur_ksize), 0)
 
-            # 3. Mask Generation (Handles single/multi and red wrap)
-            final_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-            # ... [ Mask generation logic remains the same as advanced version ] ...
+            # 3. Geração da Máscara (Lida com único/multi e wrap do vermelho)
+            final_mask = np.zeros(frame.shape[:2], dtype=np.uint8) # Começar com máscara vazia
+            # ... [ Lógica de geração da máscara permanece a mesma da versão avançada ] ...
             if self.multi_color_mode.get() and self.color_presets:
-                # Multi-Color Mode
+                # Modo Multi-Cor
                 for color_data in self.color_presets:
-                    if color_data['space'] == space: # Only process if space matches
+                    if color_data['space'] == space: # Processar apenas se o espaço corresponder
                         lower = np.array([color_data["ch1_min"], color_data["ch2_min"], color_data["ch3_min"]])
                         upper = np.array([color_data["ch1_max"], color_data["ch2_max"], color_data["ch3_max"]])
-                        # Handle Red Wrap specifically for HSV
+                        # Lidar com o Wrap do Vermelho especificamente para HSV
                         if space == "HSV" and lower[0] > upper[0]:
-                             # 0 to Max Hue
+                             # 0 até Máx Matiz
                              lower1 = np.array([0, lower[1], lower[2]])
                              upper1 = np.array([upper[0], upper[1], upper[2]])
                              mask1 = cv2.inRange(processed_frame, lower1, upper1)
-                             # Min Hue to 179
+                             # Mín Matiz até 179
                              lower2 = np.array([lower[0], lower[1], lower[2]])
                              upper2 = np.array([179, upper[1], upper[2]])
                              mask2 = cv2.inRange(processed_frame, lower2, upper2)
@@ -666,22 +666,22 @@ class ColorFilterApp:
                         else:
                              mask = cv2.inRange(processed_frame, lower, upper)
                         final_mask = cv2.bitwise_or(final_mask, mask)
-                    # Add logic here if you want multi-color to work across different spaces simultaneously (more complex)
+                    # Adicionar lógica aqui se quiser que multi-cor funcione entre espaços diferentes simultaneamente (mais complexo)
 
             else:
-                 # Single Color Mode
+                 # Modo Cor Única
                 lower = np.array([self.ch1_min_var.get(), self.ch2_min_var.get(), self.ch3_min_var.get()])
                 upper = np.array([self.ch1_max_var.get(), self.ch2_max_var.get(), self.ch3_max_var.get()])
-                if space == "HSV" and lower[0] > upper[0] : # Wrap-around case for Hue
+                if space == "HSV" and lower[0] > upper[0] : # Caso de wrap-around para Matiz
                     lower1 = np.array([0, lower[1], lower[2]]); upper1 = np.array([upper[0], upper[1], upper[2]])
                     mask1 = cv2.inRange(processed_frame, lower1, upper1)
                     lower2 = np.array([lower[0], lower[1], lower[2]]); upper2 = np.array([179, upper[1], upper[2]])
                     mask2 = cv2.inRange(processed_frame, lower2, upper2)
                     final_mask = cv2.bitwise_or(mask1, mask2)
-                else:
+                else: # Caso normal
                     final_mask = cv2.inRange(processed_frame, lower, upper)
 
-            # 4. Morphological Operations
+            # 4. Operações Morfológicas
             erode_ksize = self.erosion_size.get()
             dilate_ksize = self.dilation_size.get()
             if erode_ksize > 0:
@@ -689,9 +689,9 @@ class ColorFilterApp:
                 final_mask = cv2.erode(final_mask, erode_kernel, iterations=1)
             if dilate_ksize > 0:
                 dilate_kernel = np.ones((dilate_ksize, dilate_ksize), np.uint8)
-                final_mask = cv2.dilate(final_mask, dilate_kernel, iterations=1) # Usually 1 iteration is enough after erode
+                final_mask = cv2.dilate(final_mask, dilate_kernel, iterations=1) # Geralmente 1 iteração é suficiente após erode
 
-            # 5. Find and Filter Contours
+            # 5. Encontrar e Filtrar Contornos
             contours, _ = cv2.findContours(final_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             min_area = self.min_contour_area.get()
             detected_objects = 0
@@ -700,69 +700,72 @@ class ColorFilterApp:
                 filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
                 detected_objects = len(filtered_contours)
 
-                # 6. Draw Visualizations on result_frame_for_drawing
+                # 6. Desenhar Visualizações em result_frame_for_drawing
                 if filtered_contours:
                     if self.show_contours.get():
-                        cv2.drawContours(result_frame_for_drawing, filtered_contours, -1, (0, 255, 0), 2)
+                        cv2.drawContours(result_frame_for_drawing, filtered_contours, -1, (0, 255, 0), 2) # Contornos verdes
                     for cnt in filtered_contours:
+                        # Caixas Delimitadoras
                         if self.show_bounding_boxes.get():
                             x, y, w, h = cv2.boundingRect(cnt)
-                            cv2.rectangle(result_frame_for_drawing, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                            cv2.rectangle(result_frame_for_drawing, (x, y), (x+w, y+h), (255, 0, 0), 2) # Caixas azuis
+                        # Centro do Objeto
                         if self.show_object_center.get():
                             M = cv2.moments(cnt)
                             if M["m00"] != 0:
                                 cX = int(M["m10"] / M["m00"]); cY = int(M["m01"] / M["m00"])
-                                cv2.circle(result_frame_for_drawing, (cX, cY), 5, (0, 0, 255), -1)
-                                # cv2.putText(result_frame_for_drawing, f"({cX},{cY})", ...) # Optional text
+                                cv2.circle(result_frame_for_drawing, (cX, cY), 5, (0, 0, 255), -1) # Ponto central vermelho
+                                # cv2.putText(result_frame_for_drawing, f"({cX},{cY})", ...) # Texto opcional
 
-            # 7. Apply Mask to Original Frame for Result View
+            # 7. Aplicar Máscara ao Frame Original para Visualização do Resultado
             result_masked = cv2.bitwise_and(frame, frame, mask=final_mask)
             process_time = time.time() - process_start_time
 
-            # --- Update GUI Images (Directly like simple example) ---
-            # Decide which frame to show as "Original" (raw 'frame' or 'result_frame_for_drawing')
-            original_display_frame = result_frame_for_drawing # Show frame with drawings
+            # --- Atualizar Imagens da GUI (Diretamente como no exemplo simples) ---
+            # Decidir qual frame mostrar como "Original" ('frame' bruto ou 'result_frame_for_drawing')
+            original_display_frame = result_frame_for_drawing # Mostrar frame com desenhos
 
-            # Convert colors for PIL/Tkinter
+            # Converter cores para PIL/Tkinter
             original_img_rgb = cv2.cvtColor(original_display_frame, cv2.COLOR_BGR2RGB)
-            mask_img_rgb = cv2.cvtColor(final_mask, cv2.COLOR_GRAY2RGB) # Mask needs RGB conversion for PIL
+            mask_img_rgb = cv2.cvtColor(final_mask, cv2.COLOR_GRAY2RGB) # Máscara precisa de conversão para RGB para PIL
             result_img_rgb = cv2.cvtColor(result_masked, cv2.COLOR_BGR2RGB)
 
-            # Calculate display size based on aspect ratio
+            # Calcular tamanho de exibição com base na proporção
             h, w = original_img_rgb.shape[:2]
             aspect_ratio = w / h
-            display_height = int(self.display_width / aspect_ratio)
+            # Evitar divisão por zero se a altura for 0
+            display_height = int(self.display_width / aspect_ratio) if aspect_ratio > 0 else self.display_width
             display_size = (self.display_width, display_height)
 
-            # Resize images
+            # Redimensionar imagens
             original_img_resized = cv2.resize(original_img_rgb, display_size, interpolation=cv2.INTER_LINEAR)
             mask_img_resized = cv2.resize(mask_img_rgb, display_size, interpolation=cv2.INTER_LINEAR)
             result_img_resized = cv2.resize(result_img_rgb, display_size, interpolation=cv2.INTER_LINEAR)
 
-            # Convert to PIL format
+            # Converter para formato PIL
             original_pil = Image.fromarray(original_img_resized)
             mask_pil = Image.fromarray(mask_img_resized)
             result_pil = Image.fromarray(result_img_resized)
 
-            # Convert to Tkinter format (Store in self attributes!)
+            # Converter para formato Tkinter (Armazenar nos atributos self!)
             self.original_tk = ImageTk.PhotoImage(image=original_pil)
             self.mask_tk = ImageTk.PhotoImage(image=mask_pil)
             self.result_tk = ImageTk.PhotoImage(image=result_pil)
 
-            # Update labels and keep references
+            # Atualizar labels e manter referências
             self.original_label.config(image=self.original_tk)
-            self.original_label.image = self.original_tk
+            self.original_label.image = self.original_tk # Manter referência!
             self.mask_label.config(image=self.mask_tk)
-            self.mask_label.image = self.mask_tk
+            self.mask_label.image = self.mask_tk # Manter referência!
             self.result_label.config(image=self.result_tk)
-            self.result_label.image = self.result_tk
+            self.result_label.image = self.result_tk # Manter referência!
 
 
-            # --- Update Status and FPS ---
+            # --- Atualizar Status e FPS ---
             self.frame_count += 1
             now = time.time()
             elapsed = now - self.last_update_time
-            if elapsed >= 1.0:
+            if elapsed >= 1.0: # Atualizar FPS aprox. a cada segundo
                 self.fps = self.frame_count / elapsed
                 self.fps_label.config(text=f"FPS: {self.fps:.1f}")
                 self.last_update_time = now
@@ -771,28 +774,29 @@ class ColorFilterApp:
             status_msg = f"{detected_objects} objeto(s)."
             if self.multi_color_mode.get(): status_msg += f" (Multi: {len(self.color_presets)})"
             else: status_msg += f" ({self.current_color_name.get()})"
+            #status_msg += f" | Proc: {process_time*1000:.1f}ms" # Detalhes de performance
             self.update_status(status_msg)
 
         except Exception as e:
             self.update_status(f"Erro no processamento: {e}", error=True)
             print(f"Erro detalhado no loop update:")
-            traceback.print_exc() # Print stack trace to console
+            traceback.print_exc() # Imprimir stack trace no console
 
 
-        # --- Schedule Next Update ---
-        delay = 15 # Aim for ~60 FPS loop
+        # --- Agendar Próxima Atualização ---
+        delay = 15 # Mirar em ~60 FPS loop (tempo de processamento limitará o FPS real)
         self.root.after(delay, self.update)
 
 
-    # update_image_label method is removed
+    # método update_image_label removido
 
     def update_status(self, message, error=False):
-        """Updates the status bar text."""
+        """Atualiza o texto da barra de status."""
         self.status_label.config(text=message, fg="red" if error else "black")
 
 
     def quit(self):
-        """Releases camera and closes the application."""
+        """Libera a câmera e fecha a aplicação."""
         print("Encerrando aplicação...")
         if self.cap and self.cap.isOpened():
             print("Liberando câmera...")
@@ -801,14 +805,15 @@ class ColorFilterApp:
         self.root.destroy()
 
 
-# --- Main Execution ---
+# --- Execução Principal ---
 if __name__ == "__main__":
     root = tk.Tk()
     app = ColorFilterApp(root)
-    # Ensure quit is called on window close even if __init__ failed partially
+    # Garantir que quit seja chamado ao fechar a janela, mesmo se __init__ falhar parcialmente
     root.protocol("WM_DELETE_WINDOW", app.quit)
-    # Check if app initialization was successful before starting mainloop
-    if hasattr(root, 'children') and root.children: # Basic check if GUI was built
+    # Verificar se a inicialização da app foi bem-sucedida antes de iniciar o mainloop
+    # Verifica se a janela root tem 'children' (widgets) antes de iniciar
+    if hasattr(root, 'children') and root.children: # Verificação básica se a GUI foi construída
          root.mainloop()
     else:
          print("Falha na inicialização da aplicação.")
